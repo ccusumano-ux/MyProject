@@ -8,7 +8,7 @@ TagManager:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - Player
   - Water
   - UI
   - Ground
@@ -40,6 +40,30 @@ TagManager:
   m_SortingLayers:
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: BG 4
+    uniqueID: 267012103
+    locked: 0
+  - name: BG 3
+    uniqueID: 3720150305
+    locked: 0
+  - name: BG 2
+    uniqueID: 368278147
+    locked: 0
+  - name: BG 1
+    uniqueID: 1674135239
+    locked: 0
+  - name: Main
+    uniqueID: 1748985397
+    locked: 0
+  - name: Spells
+    uniqueID: 3097478441
+    locked: 0
+  - name: Player
+    uniqueID: 2840910329
+    locked: 0
+  - name: Foreground
+    uniqueID: 2052601923
     locked: 0
   m_RenderingLayers:
   - Default

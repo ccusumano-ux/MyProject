@@ -16,6 +16,8 @@ public class ProjectileSpawner : MonoBehaviour
     [Header("Fireball Settings")]
     public float fireballMinSpeed = 4f;
     public float fireballMaxSpeed = 8f;
+    public float fireballMinY = 1f;
+    public float fireballMaxY = 4f;
 
     [Header("Pickaxe Settings")]
     public float pickaxeMinSpeed = 5f;
@@ -37,69 +39,81 @@ public class ProjectileSpawner : MonoBehaviour
         }
     }
 
-    void SpawnRandomProjectile()
+    private void SpawnRandomProjectile()
     {
         int type = Random.Range(0, 3);
         switch (type)
         {
-            case 0:
-                SpawnFireball();
-                break;
-            case 1:
-                SpawnPickaxe();
-                break;
-            case 2:
-                SpawnArrow();
-                break;
+            case 0: SpawnFireball(); break;
+            case 1: SpawnPickaxe(); break;
+            case 2: SpawnArrow(); break;
         }
     }
 
-    void SpawnFireball()
+    private void SpawnFireball()
     {
         bool fromLeft = Random.value > 0.5f;
-        Vector2 spawnPos = (Vector2)player.position + new Vector2(fromLeft ? -spawnDistance : spawnDistance, Random.Range(-2f, 2f));
-        GameObject obj = Instantiate(fireballPrefab, spawnPos, Quaternion.identity);
 
+        // Clamp spawn height so fireballs never spawn under the floor
+        float spawnY = Mathf.Clamp(Random.Range(fireballMinY, fireballMaxY), fireballMinY, fireballMaxY);
+
+        Vector2 spawnPos = new Vector2(
+            player.position.x + (fromLeft ? -spawnDistance : spawnDistance),
+            spawnY
+        );
+
+        GameObject obj = Instantiate(fireballPrefab, spawnPos, Quaternion.identity);
         Projectile p = obj.GetComponent<Projectile>();
 
-        // Use inspector speed range
+        // Random horizontal speed from inspector values
         float speed = Random.Range(fireballMinSpeed, fireballMaxSpeed);
         p.velocity = new Vector2(fromLeft ? speed : -speed, 0f);
+
+        // --- Flip sprite based on direction ---
+        // This works regardless of Animator or SpriteRenderer setup
+        SpriteRenderer sr = obj.GetComponent<SpriteRenderer>();
+        if (sr != null)
+            sr.flipX = !fromLeft;
     }
 
-    void SpawnPickaxe()
+    private void SpawnPickaxe()
     {
         bool fromLeft = Random.value > 0.5f;
-        Vector2 spawnPos = (Vector2)player.position + new Vector2(fromLeft ? -spawnDistance : spawnDistance, 2f);
-        GameObject obj = Instantiate(pickaxePrefab, spawnPos, Quaternion.identity);
+        Vector2 spawnPos = new Vector2(
+            player.position.x + (fromLeft ? -spawnDistance : spawnDistance),
+            2f
+        );
 
+        GameObject obj = Instantiate(pickaxePrefab, spawnPos, Quaternion.identity);
         Projectile p = obj.GetComponent<Projectile>();
 
-        float xForce = fromLeft ? Random.Range(pickaxeMinSpeed, pickaxeMaxSpeed) : Random.Range(-pickaxeMaxSpeed, -pickaxeMinSpeed);
+        // Random launch forces
+        float xForce = fromLeft
+            ? Random.Range(pickaxeMinSpeed, pickaxeMaxSpeed)
+            : Random.Range(-pickaxeMaxSpeed, -pickaxeMinSpeed);
         float yForce = Random.Range(pickaxeMinSpeed, pickaxeMaxSpeed);
 
-        // Add small random multiplier for speed
+        // Add random speed variation
         float speedMultiplier = Random.Range(0.8f, 1.2f);
         p.velocity = new Vector2(xForce * speedMultiplier, yForce * speedMultiplier);
 
+        // Physics + spin setup
         p.usePhysics = true;
         p.spinOnSpeed = true;
         p.spinMultiplier = 20f;
     }
 
-    void SpawnArrow()
+    private void SpawnArrow()
     {
-        Vector2 spawnPos = new Vector2(player.position.x + Random.Range(-aimError, aimError), player.position.y + spawnDistance);
-        GameObject obj = Instantiate(arrowPrefab, spawnPos, Quaternion.identity);
+        Vector2 spawnPos = new Vector2(
+            player.position.x + Random.Range(-aimError, aimError),
+            player.position.y + spawnDistance
+        );
 
+        GameObject obj = Instantiate(arrowPrefab, spawnPos, Quaternion.identity);
         Projectile p = obj.GetComponent<Projectile>();
 
-        // Use inspector speed range
         float fallSpeed = Random.Range(arrowMinSpeed, arrowMaxSpeed);
         p.velocity = Vector2.down * fallSpeed;
     }
-
-
 }
-
-
