@@ -108,9 +108,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   velocity: {x: 10, y: 0}
   lifetime: 5
+  damage: 1
   usePhysics: 0
   spinOnSpeed: 0
   spinMultiplier: 360
+  stopOnGround: 0
+  stickToPlayer: 1
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 64
+  playerLayer:
+    serializedVersion: 2
+    m_Bits: 8
+  impactFloorBool: Floor
+  impactPlayerBool: PlayerImpact
 --- !u!50 &-8501612669942632107
 Rigidbody2D:
   serializedVersion: 5
@@ -172,8 +183,8 @@ CircleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0}
-  m_Radius: 0.5
+  m_Offset: {x: 0.3, y: -0.11}
+  m_Radius: 0.68
 --- !u!95 &8332926313324044902
 Animator:
   serializedVersion: 7

@@ -108,9 +108,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   velocity: {x: 0, y: 0}
   lifetime: 5
+  damage: 1
   usePhysics: 1
   spinOnSpeed: 1
   spinMultiplier: 360
+  stopOnGround: 1
+  stickToPlayer: 1
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 64
+  playerLayer:
+    serializedVersion: 2
+    m_Bits: 8
+  impactFloorBool: Floor
+  impactPlayerBool: PlayerImpact
 --- !u!61 &-8769497367726656681
 BoxCollider2D:
   m_ObjectHideFlags: 0
