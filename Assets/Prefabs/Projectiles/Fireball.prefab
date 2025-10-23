@@ -113,13 +113,12 @@ MonoBehaviour:
   spinOnSpeed: 0
   spinMultiplier: 360
   stopOnGround: 0
-  stickToPlayer: 1
+  stickToPlayer: 0
+  destroyOnContact: 1
   groundLayer:
     serializedVersion: 2
     m_Bits: 64
-  playerLayer:
-    serializedVersion: 2
-    m_Bits: 8
+  playerTag: Player
   impactFloorBool: Floor
   impactPlayerBool: PlayerImpact
 --- !u!50 &-8501612669942632107

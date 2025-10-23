@@ -117,9 +117,7 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 64
-  playerLayer:
-    serializedVersion: 2
-    m_Bits: 8
+  playerTag: Player
   impactFloorBool: Floor
   impactPlayerBool: PlayerImpact
 --- !u!61 &-8769497367726656681

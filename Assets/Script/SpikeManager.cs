@@ -1,105 +1,79 @@
 using UnityEngine;
-using System.Collections;
 
 public class SpikeManager : MonoBehaviour
 {
-    [Header("Spike Settings")]
+    [Header("References")]
     public GameObject spikePrefab;
-    public float activationDelay = 10f;  // When spikes appear
-    public float spikeDuration = 5f;     // How long spikes stay
-    public float spikeSpacing = 1f;
-    public float floorY = -3f;
-    public float spawnWidth = 20f;
-
-    [Header("Temporary Platforms")]
     public GameObject platformPrefab;
-    public int platformCount = 3;
-    public float platformY = 1f;          // Height of platforms
-    public float platformDuration = 2f;   // How long platforms stay
 
-    private GameObject[] spawnedSpikes;
-    private GameObject[] spawnedPlatforms;
+    [Header("Floor Settings")]
+    public float spikeY = 0f;         // Y position of spikes (floor)
+    public int spikeCount = 20;       // number of spikes to cover the floor
+    public float spikeSpacing = 1f;   // distance between each spike
+
+    [Header("Platform Settings")]
+    public Transform[] platformSpawnPoints;
+    public float platformAdvanceTime = 1f;
+    public float platformDisappearDelay = 2f;
+
+    [Header("Spawn Timing")]
+    public float minSpawnInterval = 0f;
+    public float maxSpawnInterval = 30f;
+    public float spikeActiveTime = 5f;
+
+    private float timer = 0f;
+    private GameManager gameManager;
 
     private void Start()
     {
-        StartCoroutine(SpikeEventSequence());
+        gameManager = FindFirstObjectByType<GameManager>();
+        timer = Random.Range(minSpawnInterval, maxSpawnInterval);
     }
 
-    private IEnumerator SpikeEventSequence()
+    private void Update()
     {
-        // --- 1 second before spikes: spawn platforms ---
-        yield return new WaitForSeconds(activationDelay - 1f);
-        SpawnPlatforms();
+        if (gameManager == null) return;
 
-        // --- Wait 1 second to spawn spikes ---
-        yield return new WaitForSeconds(1f);
-        SpawnSpikes();
+        timer -= Time.deltaTime;
 
-        // --- Wait for spikes duration ---
-        yield return new WaitForSeconds(spikeDuration);
-        DespawnSpikes();
+        if (timer <= 0f)
+        {
+            SpawnSpikesAndPlatforms();
 
-        // --- Wait platform duration ---
-        yield return new WaitForSeconds(platformDuration);
-        DespawnPlatforms();
+            // reset timer with difficulty scaling
+            float difficultyMultiplier = 1f + gameManager.elapsedTime / 60f;
+            timer = Random.Range(minSpawnInterval, maxSpawnInterval) / difficultyMultiplier;
+        }
     }
 
-    #region Spike Methods
-    private void SpawnSpikes()
+    private void SpawnSpikesAndPlatforms()
     {
-        int spikeCount = Mathf.RoundToInt(spawnWidth / spikeSpacing);
-        spawnedSpikes = new GameObject[spikeCount];
+        // --- Spawn platforms ---
+        if (platformSpawnPoints != null && platformSpawnPoints.Length > 0)
+        {
+            int numPlatforms = Mathf.Max(1, 5 - Mathf.FloorToInt(gameManager.elapsedTime / 30f));
+            for (int i = 0; i < numPlatforms; i++)
+            {
+                Transform spawnPoint = platformSpawnPoints[Random.Range(0, platformSpawnPoints.Length)];
+                GameObject platform = Instantiate(platformPrefab, spawnPoint.position, Quaternion.identity);
+                Destroy(platform, spikeActiveTime + platformDisappearDelay);
+            }
+        }
 
-        float startX = -spawnWidth / 2f;
+        // --- Spawn spikes across the floor ---
+        StartCoroutine(SpawnSpikesCoroutine());
+    }
 
+    private System.Collections.IEnumerator SpawnSpikesCoroutine()
+    {
+        yield return new WaitForSeconds(platformAdvanceTime);
+
+        float startX = -((spikeCount - 1) * spikeSpacing) / 2f; // center spikes around 0
         for (int i = 0; i < spikeCount; i++)
         {
-            Vector3 spawnPos = new Vector3(startX + i * spikeSpacing, floorY, 0f);
-            spawnedSpikes[i] = Instantiate(spikePrefab, spawnPos, Quaternion.identity);
+            Vector3 pos = new Vector3(startX + i * spikeSpacing, spikeY, 0f);
+            GameObject spike = Instantiate(spikePrefab, pos, Quaternion.identity);
+            Destroy(spike, spikeActiveTime);
         }
-
-        Debug.Log("⚠️ Spikes Activated!");
     }
-
-    private void DespawnSpikes()
-    {
-        if (spawnedSpikes == null) return;
-
-        foreach (GameObject s in spawnedSpikes)
-        {
-            if (s != null) Destroy(s);
-        }
-
-        Debug.Log("🟢 Spikes Deactivated!");
-    }
-    #endregion
-
-    #region Platform Methods
-    private void SpawnPlatforms()
-    {
-        spawnedPlatforms = new GameObject[platformCount];
-
-        float spacing = spawnWidth / (platformCount + 1);
-
-        for (int i = 0; i < platformCount; i++)
-        {
-            Vector3 spawnPos = new Vector3(-spawnWidth / 2f + spacing * (i + 1), platformY, 0f);
-            spawnedPlatforms[i] = Instantiate(platformPrefab, spawnPos, Quaternion.identity);
-        }
-
-        Debug.Log("🟡 Temporary Platforms Spawned!");
-    }
-
-    private void DespawnPlatforms()
-    {
-        if (spawnedPlatforms == null) return;
-
-        foreach (GameObject p in spawnedPlatforms)
-        {
-            if (p != null) Destroy(p);
-        }
-
-        Debug.Log("🔵 Temporary Platforms Removed!");
-    }
-    #endregion
 }

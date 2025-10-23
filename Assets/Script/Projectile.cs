@@ -16,16 +16,19 @@ public class Projectile : MonoBehaviour
     [Header("Impact Settings")]
     public bool stopOnGround = true;
     public bool stickToPlayer = true;
+    public bool destroyOnContact = false; // 🔥 new toggle
 
     public LayerMask groundLayer;
-    public LayerMask playerLayer;
+    public string playerTag = "Player";
     public string impactFloorBool = "Floor";
     public string impactPlayerBool = "PlayerImpact";
 
+    // internal refs
     private Rigidbody2D rb;
     private Collider2D col;
     private Animator anim;
 
+    // state
     private bool hitGround = false;
     private bool hitPlayer = false;
     private Transform _stickTarget = null;
@@ -35,7 +38,7 @@ public class Projectile : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         col = GetComponent<Collider2D>();
-        anim = GetComponent<Animator>();
+        anim = GetComponent<Animator>(); // optional
     }
 
     private void Start()
@@ -46,9 +49,12 @@ public class Projectile : MonoBehaviour
 
     private void FixedUpdate()
     {
+        
+        // keep moving if it's a kinematic projectile
         if (!usePhysics && !hitGround && !hitPlayer)
             rb.linearVelocity = velocity;
 
+        // spin visual
         if (spinOnSpeed)
         {
             float speed = rb.linearVelocity.magnitude;
@@ -56,25 +62,37 @@ public class Projectile : MonoBehaviour
             transform.Rotate(Vector3.forward, -spinDir * speed * spinMultiplier * Time.fixedDeltaTime);
         }
 
+        // visual stick to player (no physics)
         if (hitPlayer && _stickTarget != null)
             transform.position = _stickTarget.position + _stickOffset;
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        int layerMask = 1 << collision.gameObject.layer;
+        HandleContact(collision.gameObject);
+    }
 
-        // --- Ground Impact ---
-        if (!hitGround && stopOnGround && (layerMask & groundLayer) != 0)
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        HandleContact(other.gameObject);
+    }
+
+    private void HandleContact(GameObject other)
+    {
+        if (other == null) return;
+
+        // 1) Ground impact
+        int otherLayerMask = 1 << other.layer;
+        if (!hitGround && stopOnGround && (otherLayerMask & groundLayer) != 0)
         {
             HandleGroundImpact();
             return;
         }
 
-        // --- Player Impact ---
-        if (!hitPlayer && stickToPlayer && (layerMask & playerLayer) != 0)
+        // 2) Player contact
+        if (!hitPlayer && other.CompareTag(playerTag))
         {
-            HandlePlayerImpact(collision);
+            HandlePlayerContact(other);
             return;
         }
     }
@@ -82,34 +100,61 @@ public class Projectile : MonoBehaviour
     private void HandleGroundImpact()
     {
         hitGround = true;
+
+        if (destroyOnContact)
+        {
+            DestroyProjectile();
+            return;
+        }
+
         rb.linearVelocity = Vector2.zero;
         rb.bodyType = RigidbodyType2D.Kinematic;
-
-        if (col != null)
-            col.enabled = false; // ✅ stop further collisions
+        if (col != null) col.enabled = false;
 
         if (anim != null && !string.IsNullOrEmpty(impactFloorBool))
             anim.SetBool(impactFloorBool, true);
     }
 
-    private void HandlePlayerImpact(Collision2D collision)
+    private void HandlePlayerContact(GameObject playerObj)
     {
-        hitPlayer = true;
-        rb.linearVelocity = Vector2.zero;
-        rb.bodyType = RigidbodyType2D.Kinematic;
 
-        if (col != null)
-            col.enabled = false; // ✅ disable collisions so it doesn’t block player
-
-        _stickTarget = collision.transform;
-        _stickOffset = transform.position - _stickTarget.position;
-
-        // 🎯 Apply Damage
-        PlayerLife playerLife = collision.gameObject.GetComponent<PlayerLife>();
+        if (hitGround) return;
+        PlayerLife playerLife = playerObj.GetComponentInParent<PlayerLife>();
         if (playerLife != null)
             playerLife.TakeDamage(damage);
 
+        if (destroyOnContact)
+        {
+            DestroyProjectile();
+            return;
+        }
+
+        hitPlayer = true;
+        rb.linearVelocity = Vector2.zero;
+        rb.bodyType = RigidbodyType2D.Kinematic;
+        if (col != null) col.enabled = false;
+
+        if (stickToPlayer)
+        {
+            _stickTarget = playerObj.transform;
+            _stickOffset = transform.position - _stickTarget.position;
+        }
+
         if (anim != null && !string.IsNullOrEmpty(impactPlayerBool))
             anim.SetBool(impactPlayerBool, true);
+    }
+
+    private void DestroyProjectile()
+    {
+        if (anim != null)
+        {
+            // play impact animation one frame before destroy
+            if (!string.IsNullOrEmpty(impactPlayerBool))
+                anim.SetBool(impactPlayerBool, true);
+            if (!string.IsNullOrEmpty(impactFloorBool))
+                anim.SetBool(impactFloorBool, true);
+        }
+
+        Destroy(gameObject);
     }
 }
