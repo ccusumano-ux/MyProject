@@ -1,5 +1,6 @@
 using UnityEngine;
 using TMPro;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
@@ -52,6 +53,11 @@ public class GameManager : MonoBehaviour
         if (playerLife != null)
         {
             livesText.text = $"Lives: {playerLife.currentLives}/{playerLife.maxLives}";
+        }
+
+        if (playerLife != null && playerLife.currentLives <= 0)
+        {
+            SceneManager.LoadScene("MainMenu");
         }
     }
 }
