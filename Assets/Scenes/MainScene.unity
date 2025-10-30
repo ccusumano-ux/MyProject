@@ -2967,7 +2967,7 @@ MonoBehaviour:
   - {fileID: 1786738143}
   - {fileID: 1032177511}
   - {fileID: 373777974}
-  platformAdvanceTime: 2
+  platformAdvanceTime: 1
   platformDisappearDelay: 1
   minSpawnInterval: 10
   maxSpawnInterval: 30
