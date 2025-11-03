@@ -15,36 +15,41 @@ public class GameManager : MonoBehaviour
 
     private float currentScore = 0f;
     public float elapsedTime = 0f;
+    private bool gameOver = false;
+
     private PlayerLife playerLife;
+    private HighScoreManager highScoreManager;
 
     private void Start()
     {
         playerLife = FindFirstObjectByType<PlayerLife>();
+        highScoreManager = FindFirstObjectByType<HighScoreManager>();
+
+        if (playerLife != null)
+            playerLife.onDeath.AddListener(HandlePlayerDeath);
+
         UpdateUI();
     }
 
     private void Update()
     {
-        if (playerLife != null && playerLife.currentLives > 0)
-        {
-            // increase time
-            elapsedTime += Time.deltaTime;
+        if (playerLife == null || gameOver) return;
+        if (playerLife.currentLives <= 0) return; // avoid score ticking after death
 
-            // calculate current PPS with linear growth
-            float currentPPS = basePPS + elapsedTime * incrementFactor;
-
-            // add score
-            currentScore += currentPPS * Time.deltaTime;
-        }
+        // --- Increase time and score ---
+        elapsedTime += Time.deltaTime;
+        float currentPPS = basePPS + elapsedTime * incrementFactor;
+        currentScore += currentPPS * Time.deltaTime;
 
         UpdateUI();
     }
 
     private void UpdateUI()
     {
-        // --- Score & Time ---
+        // --- Score ---
         scoreText.text = $"Score: {Mathf.FloorToInt(currentScore)}";
 
+        // --- Time ---
         int minutes = Mathf.FloorToInt(elapsedTime / 60f);
         int seconds = Mathf.FloorToInt(elapsedTime % 60f);
         timeText.text = $"Time: {minutes:0}'{seconds:00}";
@@ -54,10 +59,20 @@ public class GameManager : MonoBehaviour
         {
             livesText.text = $"Lives: {playerLife.currentLives}/{playerLife.maxLives}";
         }
+    }
 
-        if (playerLife != null && playerLife.currentLives <= 0)
-        {
-            SceneManager.LoadScene("MainMenu");
-        }
+    private void HandlePlayerDeath()
+    {
+        if (gameOver) return;
+
+        gameOver = true;
+        int finalScore = Mathf.FloorToInt(currentScore);
+
+        if (highScoreManager != null)
+            highScoreManager.ShowPanel(finalScore);
+
+        UpdateUI(); // ensures lives show 0/3
+        Time.timeScale = 0f;
+        highScoreManager.ShowPanel(Mathf.FloorToInt(currentScore));
     }
 }
