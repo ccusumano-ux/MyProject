@@ -19,6 +19,10 @@ public class HighScoreManager : MonoBehaviour
     public GameObject buttonRetry;
     public GameObject buttonMenu;
 
+    [Header("Online Score API")]
+    public GoogleSheetAPI googleSheetAPI; // assign in Inspector
+
+
     [Header("Base High Scores")]
     public int[] baseScores = { 500, 400, 300, 200, 100 };
 
@@ -78,6 +82,10 @@ public class HighScoreManager : MonoBehaviour
 
         AddNewScore(pendingScore, playerName);
         SaveHighScores();
+
+        // --- Send score to Google Sheets ---
+        if (googleSheetAPI != null)
+            googleSheetAPI.SubmitScore(playerName, pendingScore);
 
         nameEntryPanel.SetActive(false);
         DisplayScores();
