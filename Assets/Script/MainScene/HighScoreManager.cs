@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using TMPro;
 using System;
 using System.Linq;
@@ -147,5 +147,17 @@ public class HighScoreManager : MonoBehaviour
         buttonMenu.SetActive(true);
     }
 
+    // 🔹 BUTTON: Retry current level
+    public void OnRetryButton()
+    {
+        Time.timeScale = 1f; // resume game time
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
+    // 🔹 BUTTON: Return to Main Menu
+    public void OnMenuButton()
+    {
+        Time.timeScale = 1f; // resume time
+        SceneManager.LoadScene("MainMenu"); // change to your actual menu scene name
+    }
 }
-//Version 0001
