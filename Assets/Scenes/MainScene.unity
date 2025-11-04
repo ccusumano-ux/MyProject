@@ -368,7 +368,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1369792691}
         m_TargetAssemblyTypeName: HighScoreManager, Assembly-CSharp
-        m_MethodName: GoToMenu
+        m_MethodName: OnMenuButton
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -4193,7 +4193,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1369792691}
         m_TargetAssemblyTypeName: HighScoreManager, Assembly-CSharp
-        m_MethodName: Retry
+        m_MethodName: OnRetryButton
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
