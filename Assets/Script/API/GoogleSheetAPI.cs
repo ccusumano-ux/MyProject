@@ -1,30 +1,51 @@
 ﻿using UnityEngine;
 using UnityEngine.Networking;
 using System.Collections;
+using System;
 
-public class GoogleSheetAPI : MonoBehaviour
+public class GoogleSheetsAPI : MonoBehaviour
 {
-    [Header("Web App URL (Version 2)")]
-    public string googleSheetURL = "https://script.google.com/macros/s/AKfycbzEGWdCMCLRCVwYjtFD1BVWGPxyfnlmP3CsHUbyLXyahZ3hTrDLk5jaVWUcf60DuXAj/exec";
+    [Header("Web App URL")]
+    public string googleSheetURL = "https://script.google.com/macros/s/AKfycbw288A9L3PuzMZ9pYOf8XszjiHfNgy6Ph9boNj0obyVFsxhbM_obaIesssHDGlnt-lf/exec";
 
-    // Serializable class for JSON data
-    [System.Serializable]
-    public class ScoreData
+    [Header("Timeout")]
+    public float requestTimeout = 10f;
+
+    public Action<string> onGetLeaderboard; // callback with JSON string
+    public Action<bool> onPostResult;       // callback: success/fail
+
+    public void GetLeaderboard()
     {
-        public string name;
-        public int score;
+        StartCoroutine(GetRequest());
     }
 
-    // Public method to call from HighScoreManager
-    public void SubmitScore(string playerName, int playerScore)
+    private IEnumerator GetRequest()
     {
-        StartCoroutine(PostScore(playerName, playerScore));
+        string url = "https://api.allorigins.win/raw?url=" + UnityWebRequest.EscapeURL(googleSheetURL);
+
+        UnityWebRequest www = UnityWebRequest.Get(url);
+        www.timeout = Mathf.RoundToInt(requestTimeout);
+        yield return www.SendWebRequest();
+
+        if (www.result == UnityWebRequest.Result.Success)
+        {
+            onGetLeaderboard?.Invoke(www.downloadHandler.text);
+        }
+        else
+        {
+            Debug.LogError("❌ GET leaderboard failed: " + www.error);
+            onGetLeaderboard?.Invoke(null);
+        }
     }
 
-    // Coroutine to handle POST request
-    private IEnumerator PostScore(string playerName, int playerScore)
+    public void PostScore(string playerName, int score)
     {
-        ScoreData data = new ScoreData { name = playerName, score = playerScore };
+        StartCoroutine(PostRequest(playerName, score));
+    }
+
+    private IEnumerator PostRequest(string playerName, int score)
+    {
+        ScoreData data = new ScoreData { name = playerName, score = score };
         string json = JsonUtility.ToJson(data);
 
         UnityWebRequest www = new UnityWebRequest(googleSheetURL, "POST");
@@ -37,13 +58,22 @@ public class GoogleSheetAPI : MonoBehaviour
 
         if (www.result == UnityWebRequest.Result.Success)
         {
-            Debug.Log("✅ Score submitted successfully!");
-            Debug.Log("Server Response: " + www.downloadHandler.text);
+            onPostResult?.Invoke(true);
+            Debug.Log("✅ Score posted successfully!");
         }
         else
         {
-            Debug.LogError("❌ Error submitting score: " + www.error);
-            Debug.LogError("Server Response: " + www.downloadHandler.text);
+            onPostResult?.Invoke(false);
+            Debug.LogError("❌ POST score failed: " + www.error);
         }
     }
+
+    [Serializable]
+    public class ScoreData
+    {
+        public string name;
+        public int score;
+    }
+
 }
+//Version 0001

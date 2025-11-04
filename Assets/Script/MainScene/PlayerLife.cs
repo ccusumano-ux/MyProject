@@ -8,29 +8,36 @@ public class PlayerLife : MonoBehaviour
     public int currentLives;
 
     [Header("Invincibility Settings")]
-    public float invincibilityDuration = 1f; // Time after hit player can't take damage
+    public float invincibilityDuration = 1f;
     private bool isInvincible = false;
 
     [Header("Events")]
-    public UnityEvent onTakeDamage;  // Optional event for UI, effects
+    public UnityEvent onTakeDamage;
     public UnityEvent onDeath;
+
+    [HideInInspector] public bool debugDeathTriggered = false;
 
     private void Awake()
     {
         currentLives = maxLives;
     }
 
-    /// <summary>
-    /// Call this method to deal damage to the player.
-    /// </summary>
-    /// <param name="amount">Amount of life to remove</param>
+    private void Update()
+    {
+        // Debug: Press 'O' to instantly die and test leaderboard submission
+        if (Input.GetKeyDown(KeyCode.O))
+        {
+            debugDeathTriggered = true;
+            ForceDeathForDebug();
+        }
+    }
+
     public void TakeDamage(int amount = 1)
     {
         if (isInvincible) return;
 
         currentLives -= amount;
         currentLives = Mathf.Max(currentLives, 0);
-
         onTakeDamage?.Invoke();
 
         if (currentLives <= 0)
@@ -47,9 +54,6 @@ public class PlayerLife : MonoBehaviour
     {
         Debug.Log("💀 Player Died!");
         onDeath?.Invoke();
-
-        // Optional: disable player controls
-        // GetComponent<PlayerController>().enabled = false;
     }
 
     private System.Collections.IEnumerator InvincibilityCoroutine()
@@ -59,12 +63,18 @@ public class PlayerLife : MonoBehaviour
         isInvincible = false;
     }
 
-    /// <summary>
-    /// Heal the player
-    /// </summary>
     public void Heal(int amount = 1)
     {
         currentLives += amount;
         currentLives = Mathf.Min(currentLives, maxLives);
     }
+
+    // Debug helper: kills player immediately
+    private void ForceDeathForDebug()
+    {
+        currentLives = 0;
+        Die();
+    }
+
 }
+//Version 0001

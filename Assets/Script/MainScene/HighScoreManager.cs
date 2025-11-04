@@ -1,8 +1,8 @@
 using UnityEngine;
 using TMPro;
-using UnityEngine.SceneManagement;
-using System.Collections.Generic;
+using System;
 using System.Linq;
+using UnityEngine.SceneManagement;
 
 public class HighScoreManager : MonoBehaviour
 {
@@ -14,34 +14,49 @@ public class HighScoreManager : MonoBehaviour
     public TextMeshProUGUI textYouDied;
     public TextMeshProUGUI textHighScore;
     public TextMeshProUGUI textPoints;
-    public TMP_InputField nameInputField; // new
-    public GameObject nameEntryPanel;     // small panel with "Enter Name" + InputField + Confirm button
+    public TMP_InputField nameInputField;
+    public GameObject nameEntryPanel;
     public GameObject buttonRetry;
     public GameObject buttonMenu;
 
     [Header("Online Score API")]
-    public GoogleSheetAPI googleSheetAPI; // assign in Inspector
+    public GoogleSheetsAPI googleSheetAPI;
 
-
-    [Header("Base High Scores")]
-    public int[] baseScores = { 500, 400, 300, 200, 100 };
-
-    private const string HighScoreKey = "HighScores";
-    private const string NameKey = "HighScoreNames";
-
-    private List<int> highScores = new List<int>();
-    private List<string> highScoreNames = new List<string>();
-
+    private GoogleSheetsAPI.ScoreData[] onlineScores;
     private int pendingScore = 0;
     private bool isNewHighScore = false;
 
     private void Start()
     {
-        LoadHighScores();
-        HidePanel();
+        if (googleSheetAPI == null)
+        {
+            Debug.LogError("GoogleSheetAPI not assigned!");
+            return;
+        }
+
+        googleSheetAPI.onGetLeaderboard += OnLeaderboardReceived;
+        googleSheetAPI.GetLeaderboard();
 
         if (nameInputField != null)
             nameInputField.onSubmit.AddListener(_ => ConfirmName());
+    }
+
+    private void OnLeaderboardReceived(string json)
+    {
+        if (string.IsNullOrEmpty(json)) return;
+
+        try
+        {
+            onlineScores = JsonHelper.FromJson<GoogleSheetsAPI.ScoreData>(json)
+                            .OrderByDescending(s => s.score)
+                            .Take(5)
+                            .ToArray();
+            DisplayScores();
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("Failed to parse leaderboard JSON: " + e.Message);
+        }
     }
 
     public void ShowPanel(int finalScore)
@@ -51,12 +66,10 @@ public class HighScoreManager : MonoBehaviour
         boxPanel.SetActive(true);
         textYouDied.text = "YOU DIED";
         textHighScore.text = "HIGHSCORES";
-        
 
         pendingScore = finalScore;
 
-        // Check if it qualifies for top 5
-        isNewHighScore = highScores.Count < 5 || finalScore > highScores.Min();
+        isNewHighScore = onlineScores.Length < 5 || finalScore > onlineScores.Min(s => s.score);
 
         if (isNewHighScore)
         {
@@ -70,91 +83,69 @@ public class HighScoreManager : MonoBehaviour
         }
     }
 
+    public void ForceDebugScore(int finalScore)
+    {
+        deathCanvas.SetActive(true);
+        darkPanel.SetActive(true);
+        boxPanel.SetActive(true);
+        textYouDied.text = "YOU DIED";
+        textHighScore.text = "HIGHSCORES";
+
+        pendingScore = finalScore;
+
+        if (onlineScores == null || onlineScores.Length < 5)
+        {
+            // Fill empty leaderboard
+            onlineScores = new GoogleSheetsAPI.ScoreData[5];
+            for (int i = 0; i < 5; i++)
+            {
+                onlineScores[i] = new GoogleSheetsAPI.ScoreData { name = "AAA", score = 0 };
+            }
+        }
+
+        onlineScores[4].score = finalScore;
+        onlineScores[4].name = "DEBUG";
+
+        googleSheetAPI.PostScore("DEBUG", finalScore);
+
+        DisplayScores();
+    }
+
     public void ConfirmName()
     {
         string playerName = nameInputField.text.Trim();
+        if (string.IsNullOrEmpty(playerName)) playerName = "AAA";
+        if (playerName.Length > 6) playerName = playerName.Substring(0, 6);
 
-        if (string.IsNullOrEmpty(playerName))
-            playerName = "AAA";
-
-        if (playerName.Length > 6)
-            playerName = playerName.Substring(0, 6);
-
-        AddNewScore(pendingScore, playerName);
-        SaveHighScores();
-
-        // --- Send score to Google Sheets ---
-        if (googleSheetAPI != null)
-            googleSheetAPI.SubmitScore(playerName, pendingScore);
+        googleSheetAPI.onPostResult += OnScoreSubmitted;
+        googleSheetAPI.PostScore(playerName, pendingScore);
 
         nameEntryPanel.SetActive(false);
-        DisplayScores();
+    }
+
+    private void OnScoreSubmitted(bool success)
+    {
+        googleSheetAPI.GetLeaderboard();
+        googleSheetAPI.onPostResult -= OnScoreSubmitted;
     }
 
     private void DisplayScores()
     {
         textPoints.text = "";
-        for (int i = 0; i < highScores.Count; i++)
+        if (onlineScores == null || onlineScores.Length == 0)
         {
-            textPoints.text += $"{i + 1}. {highScoreNames[i]}  -  {highScores[i]}\n";
+            textPoints.text = "Loading leaderboard...";
+            return;
+        }
+
+        for (int i = 0; i < onlineScores.Length; i++)
+        {
+            textPoints.text += $"{i + 1}. {onlineScores[i].name} - {onlineScores[i].score}\n";
         }
 
         buttonRetry.SetActive(true);
         buttonMenu.SetActive(true);
     }
 
-    public void Retry()
-    {
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-        Time.timeScale = 1f;
-    }
-
-    public void GoToMenu()
-    {
-        SceneManager.LoadScene("MainMenu");
-        Time.timeScale = 1f;
-    }
-
-    public void HidePanel()
-    {
-        deathCanvas.SetActive(false);
-    }
-
-    private void AddNewScore(int score, string name)
-    {
-        highScores.Add(score);
-        highScoreNames.Add(name);
-
-        // Order by score
-        var combined = highScores
-            .Select((s, i) => new { Score = s, Name = highScoreNames[i] })
-            .OrderByDescending(x => x.Score)
-            .Take(5)
-            .ToList();
-
-        highScores = combined.Select(x => x.Score).ToList();
-        highScoreNames = combined.Select(x => x.Name).ToList();
-    }
-
-    private void SaveHighScores()
-    {
-        PlayerPrefs.SetString(HighScoreKey, string.Join(",", highScores));
-        PlayerPrefs.SetString(NameKey, string.Join(",", highScoreNames));
-        PlayerPrefs.Save();
-    }
-
-    private void LoadHighScores()
-    {
-        if (PlayerPrefs.HasKey(HighScoreKey) && PlayerPrefs.HasKey(NameKey))
-        {
-            highScores = PlayerPrefs.GetString(HighScoreKey).Split(',').Select(int.Parse).ToList();
-            highScoreNames = PlayerPrefs.GetString(NameKey).Split(',').ToList();
-        }
-        else
-        {
-            // Load defaults
-            highScores = baseScores.ToList();
-            highScoreNames = new List<string> { "AAA", "BBB", "CCC", "DDD", "EEE" };
-        }
-    }
 }
+//Version 0001

@@ -17,7 +17,7 @@ public class PlayerController : MonoBehaviour
 
     [Header("Wall Check (Tag Based)")]
     public float wallCheckDistance = 0.3f;
-    public string wallTag = "Wall"; // Tag to detect walls
+    public string wallTag = "Wall";
 
     private Rigidbody2D rb;
     private Vector2 moveInput;
@@ -33,19 +33,15 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
-        // --- Get Movement Input ---
         moveInput.x = Input.GetAxisRaw("Horizontal");
 
-        // --- Ground Check ---
         isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
-
         if (isGrounded)
         {
             lastGroundedTime = Time.time;
             isJumping = false;
         }
 
-        // --- Jump Input ---
         if (Input.GetKeyDown(KeyCode.Space))
             jumpPressed = true;
 
@@ -56,7 +52,6 @@ public class PlayerController : MonoBehaviour
                 rb.linearVelocity = new Vector2(rb.linearVelocity.x, rb.linearVelocity.y * jumpCutMultiplier);
         }
 
-        // --- Jump Execution ---
         if (jumpPressed && (isGrounded || Time.time - lastGroundedTime <= coyoteTime))
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
@@ -68,31 +63,16 @@ public class PlayerController : MonoBehaviour
     private void FixedUpdate()
     {
         float moveDir = moveInput.x;
-
-        // --- Wall Check (Tag Based) ---
         bool touchingWall = false;
+
         if (moveDir != 0)
         {
-            Vector2 origin = transform.position;
-            Vector2 direction = new Vector2(moveDir, 0f);
-            RaycastHit2D wallHit = Physics2D.Raycast(origin, direction, wallCheckDistance);
-
+            RaycastHit2D wallHit = Physics2D.Raycast(transform.position, new Vector2(moveDir, 0), wallCheckDistance);
             if (wallHit.collider != null && wallHit.collider.CompareTag(wallTag))
-            {
                 touchingWall = true;
-            }
         }
 
-        // --- Apply Horizontal Movement ---
-        if (!touchingWall)
-        {
-            rb.linearVelocity = new Vector2(moveDir * moveSpeed, rb.linearVelocity.y);
-        }
-        else
-        {
-            // Stop horizontal movement when hitting a tagged wall
-            rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
-        }
+        rb.linearVelocity = new Vector2(touchingWall ? 0f : moveDir * moveSpeed, rb.linearVelocity.y);
     }
 
     private void OnDrawGizmosSelected()
@@ -103,7 +83,6 @@ public class PlayerController : MonoBehaviour
             Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
         }
 
-        // visualize wall check
         Gizmos.color = Color.blue;
         if (Application.isPlaying)
         {
@@ -111,4 +90,6 @@ public class PlayerController : MonoBehaviour
             Gizmos.DrawLine(transform.position, (Vector2)transform.position + dir * wallCheckDistance);
         }
     }
+
 }
+//Version 0001
