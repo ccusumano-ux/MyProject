@@ -25,6 +25,7 @@ public class HighScoreManager : MonoBehaviour
     private GoogleSheetsAPI.ScoreData[] onlineScores;
     private int pendingScore = 0;
     private bool isNewHighScore = false;
+    bool hasLogged = false;
 
     private void Start()
     {
@@ -43,6 +44,12 @@ public class HighScoreManager : MonoBehaviour
 
     private void OnLeaderboardReceived(string json)
     {
+        if (!hasLogged)
+        {
+            Debug.Log("Received leaderboard data: " + json);
+            hasLogged = true;
+        }
+
         if (string.IsNullOrEmpty(json)) return;
 
         try
