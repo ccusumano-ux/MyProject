@@ -25,18 +25,30 @@ public class HighScoreManager : MonoBehaviour
     private GoogleSheetsAPI.ScoreData[] onlineScores;
     private int pendingScore = 0;
     private bool isNewHighScore = false;
-    bool hasLogged = false;
 
     private void Start()
     {
         if (googleSheetAPI == null)
         {
-            Debug.LogError("GoogleSheetAPI not assigned!");
+            Debug.LogError("HighScoreManager: GoogleSheetAPI not assigned!");
             return;
         }
 
         googleSheetAPI.onGetLeaderboard += OnLeaderboardReceived;
-        googleSheetAPI.GetLeaderboard();
+
+        // ✅ Use cached leaderboard if available
+        if (MainMenuLeaderboard.cachedLeaderboard != null && MainMenuLeaderboard.cachedLeaderboard.Count > 0)
+        {
+            onlineScores = MainMenuLeaderboard.cachedLeaderboard
+                            .OrderByDescending(s => s.score)
+                            .Take(5)
+                            .ToArray();
+            Debug.Log("HighScoreManager: Using cached leaderboard from MainMenuLeaderboard.");
+        }
+        else
+        {
+            googleSheetAPI.GetLeaderboard();
+        }
 
         if (nameInputField != null)
             nameInputField.onSubmit.AddListener(_ => ConfirmName());
@@ -44,25 +56,25 @@ public class HighScoreManager : MonoBehaviour
 
     private void OnLeaderboardReceived(string json)
     {
-        if (!hasLogged)
-        {
-            Debug.Log("Received leaderboard data: " + json);
-            hasLogged = true;
-        }
-
         if (string.IsNullOrEmpty(json)) return;
 
         try
         {
             onlineScores = JsonHelper.FromJson<GoogleSheetsAPI.ScoreData>(json)
+                            .Where(s => s.score > 0)
                             .OrderByDescending(s => s.score)
                             .Take(5)
                             .ToArray();
+
+            // ✅ Update global cache
+            MainMenuLeaderboard.cachedLeaderboard = onlineScores.ToList();
+
             DisplayScores();
+            Debug.Log($"HighScoreManager: Leaderboard loaded with {onlineScores.Length} entries.");
         }
         catch (Exception e)
         {
-            Debug.LogError("Failed to parse leaderboard JSON: " + e.Message);
+            Debug.LogError("HighScoreManager: Failed to parse leaderboard JSON: " + e.Message);
         }
     }
 
@@ -76,7 +88,16 @@ public class HighScoreManager : MonoBehaviour
 
         pendingScore = finalScore;
 
-        isNewHighScore = onlineScores.Length < 5 || finalScore > onlineScores.Min(s => s.score);
+        if (onlineScores == null || onlineScores.Length == 0)
+        {
+            Debug.Log("HighScoreManager: Leaderboard not ready — treating as not new high score.");
+            isNewHighScore = false;
+        }
+        else
+        {
+            int lowestScore = onlineScores.Min(s => s.score);
+            isNewHighScore = finalScore > lowestScore;
+        }
 
         if (isNewHighScore)
         {
@@ -88,34 +109,6 @@ public class HighScoreManager : MonoBehaviour
             nameEntryPanel.SetActive(false);
             DisplayScores();
         }
-    }
-
-    public void ForceDebugScore(int finalScore)
-    {
-        deathCanvas.SetActive(true);
-        darkPanel.SetActive(true);
-        boxPanel.SetActive(true);
-        textYouDied.text = "YOU DIED";
-        textHighScore.text = "HIGHSCORES";
-
-        pendingScore = finalScore;
-
-        if (onlineScores == null || onlineScores.Length < 5)
-        {
-            // Fill empty leaderboard
-            onlineScores = new GoogleSheetsAPI.ScoreData[5];
-            for (int i = 0; i < 5; i++)
-            {
-                onlineScores[i] = new GoogleSheetsAPI.ScoreData { name = "AAA", score = 0 };
-            }
-        }
-
-        onlineScores[4].score = finalScore;
-        onlineScores[4].name = "DEBUG";
-
-        googleSheetAPI.PostScore("DEBUG", finalScore);
-
-        DisplayScores();
     }
 
     public void ConfirmName()
@@ -154,17 +147,26 @@ public class HighScoreManager : MonoBehaviour
         buttonMenu.SetActive(true);
     }
 
-    // 🔹 BUTTON: Retry current level
-    public void OnRetryButton()
+    // ✅ Button functions
+    public void RetryGame()
     {
-        Time.timeScale = 1f; // resume game time
+        Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
-    // 🔹 BUTTON: Return to Main Menu
-    public void OnMenuButton()
+    public void ReturnToMenu()
     {
-        Time.timeScale = 1f; // resume time
-        SceneManager.LoadScene("MainMenu"); // change to your actual menu scene name
+        Time.timeScale = 1f;
+        SceneManager.LoadScene("MainMenu");
+    }
+
+    // Debug score for testing
+    public void ForceDebugScore(int score)
+    {
+        Debug.Log("HighScoreManager: Debug score forced: " + score);
+
+        pendingScore = score;
+        nameEntryPanel.SetActive(true);
+        textPoints.text = "DEBUG HIGHSCORE!\nEnter your name:";
     }
 }

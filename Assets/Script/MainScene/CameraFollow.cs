@@ -31,9 +31,7 @@ public class CameraFollow : MonoBehaviour
     private void Awake()
     {
         _cam = GetComponent<Camera>();
-        if (!_cam.orthographic)
-            Debug.LogWarning("CameraFollow: Camera is not orthographic. Behavior may differ in perspective mode.");
-
+        
         _halfHeight = _cam.orthographicSize;
         _halfWidth = _halfHeight * _cam.aspect;
     }

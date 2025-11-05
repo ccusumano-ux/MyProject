@@ -727,6 +727,8 @@ GameObject:
   m_Component:
   - component: {fileID: 613390750}
   - component: {fileID: 613390749}
+  - component: {fileID: 613390752}
+  - component: {fileID: 613390753}
   m_Layer: 0
   m_Name: MenuManager
   m_TagString: Untagged
@@ -761,6 +763,35 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &613390752
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 613390748}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2ee370cdee2ec944390c74f3bed3b874, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GoogleSheetsAPI
+  googleSheetURL: https://round-cell-4d63.carcatpsl.workers.dev/
+  cloudflareWorkerURL: https://round-cell-4d63.carcatpsl.workers.dev/
+  requestTimeout: 10
+--- !u!114 &613390753
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 613390748}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 17a9974d04b596243bf810f5ababb5c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainMenuLeaderboard
+  googleSheetsAPI: {fileID: 613390752}
+  autoFetchOnStart: 1
 --- !u!1 &1372193156
 GameObject:
   m_ObjectHideFlags: 0

@@ -368,7 +368,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1369792691}
         m_TargetAssemblyTypeName: HighScoreManager, Assembly-CSharp
-        m_MethodName: OnMenuButton
+        m_MethodName: ReturnToMenu
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1069,7 +1069,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: -770, y: 450}
+  m_AnchoredPosition: {x: -704.8, y: 450}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &552276395
@@ -2267,7 +2267,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2ee370cdee2ec944390c74f3bed3b874, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  googleSheetURL: https://script.google.com/macros/s/AKfycbw288A9L3PuzMZ9pYOf8XszjiHfNgy6Ph9boNj0obyVFsxhbM_obaIesssHDGlnt-lf/exec
+  googleSheetURL: https://round-cell-4d63.carcatpsl.workers.dev/
+  cloudflareWorkerURL: https://round-cell-4d63.carcatpsl.workers.dev/
   requestTimeout: 10
 --- !u!1 &1374263038
 GameObject:
@@ -3044,9 +3045,9 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 928449284}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 1, y: 1}
-  m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -870, y: 400}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: -698.2, y: 400}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1768370595
@@ -3599,9 +3600,9 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 928449284}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 870, y: 450}
+  m_AnchorMin: {x: 1, y: 1}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 770, y: 450}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1926283690
@@ -4193,7 +4194,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1369792691}
         m_TargetAssemblyTypeName: HighScoreManager, Assembly-CSharp
-        m_MethodName: OnRetryButton
+        m_MethodName: RetryGame
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -4418,7 +4419,7 @@ MonoBehaviour:
   - {fileID: 1032177511}
   - {fileID: 373777974}
   platformAdvanceTime: 1
-  platformDisappearDelay: 1
+  platformDisappearDelay: 2
   minSpawnInterval: 10
   maxSpawnInterval: 30
   spikeActiveTime: 5
